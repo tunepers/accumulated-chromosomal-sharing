@@ -10,14 +10,14 @@ import argparse
 
 
 parser = argparse.ArgumentParser(description='Get coverage')
-parser.add_argument('input_file', metavar='Input File', type=str, help='Input file from PLINK for a given chromosome')
+parser.add_argument('input_overlap_file', metavar='Input PLINK overlap file', type=str, help='Input file from PLINK for a given chromosome')
+parser.add_argument('input_fam_file', metavar='Input PLINK .fam file', type=str, help='Input file PLINK .fam file ')
 args = parser.parse_args()
-infilename = args.input_file
 
 
 ####### Read overlap file
 collection_dict = {}
-with open(infilename,'r') as infile:
+with open(args.input_overlap_file,'r') as infile:
     for i,line in enumerate(infile.readlines()[1:]):
         words = line.strip().split()
         if not 'BP1' in line:
@@ -42,14 +42,13 @@ def get_region_bps_sum(tree):
 
 
 ####### Identify overlaps
-ind = pd.read_csv('/Users/tp/Drive/Work/Misc/Broad-EGCUT-sequencing-project/EGCUT_OMNI_370_pihat0.120.pruned.fam.txt',sep="\t")
-ind_with_overlap = collection_dict.keys()
-results_df = pd.DataFrame(index=list(ind_with_overlap), columns=range(1,len(ind)+1))
-for i,IID1 in enumerate(ind_with_overlap):
+ind = pd.read_csv(args.input_fam_file,sep="\t")
+results_df = pd.DataFrame(index=list(ind.IID), columns=range(1,len(ind)+1))
+for i,IID1 in enumerate(ind.IID):
     
     # Status
     if ( i % 100 == 0):
-        print "%s out of %s"%(i+100, len(ind_with_overlap))
+        print "%s out of %s"%(i+100, len(ind.IID))
 
     tree = ClusterTree(0,0)
     running_sum = 0
@@ -57,7 +56,7 @@ for i,IID1 in enumerate(ind_with_overlap):
     # All entries for IID and IID2
     for j,IID2 in enumerate(ind.IID):
 
-        if IID2 in collection_dict[IID1]:
+        if IID1 in collection_dict and IID2 in collection_dict[IID1]:
             sta, end, i = collection_dict[IID1][IID2]
             tree.insert(sta, end, i)
             running_sum = get_region_bps_sum(tree)
